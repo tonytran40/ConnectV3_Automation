@@ -30,9 +30,9 @@ jobs:
       # Run only Chromium + Firefox for now; add --project=webkit later if needed
       - name: Run Playwright tests (Chromium + Firefox)
         env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          USER_EMAIL: ${{ secrets.USER_EMAIL }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          BASE_URL: ${{ secrets.URL }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
         run: npx playwright test --project=chromium --project=firefox
 
       # Upload HTML report even on failure
