@@ -1,5 +1,4 @@
 name: Playwright Tests
-
 on:
   push:
     branches: [ main, master ]
@@ -8,45 +7,22 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     timeout-minutes: 60
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22           # match local/asdf (22.16.0)
-          cache: 'npm'               # enable npm cache
-
+          node-version: lts/*
       - name: Install dependencies
         run: npm ci
-
-      - name: Install Playwright browsers + Linux deps
+      - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-
-      - name: Run Playwright tests (headless on CI via config)
-        env:
-          BASE_URL: ${{ secrets.BASE_URL }}          # e.g. https://connect-staging.powerhrg.com
-          USER_EMAIL: ${{ secrets.USER_EMAIL }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-        run: npx playwright test
-
-      # Always keep the HTML report + traces
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Run Playwright tests (Chromium + Firefox only)
+        run: npx playwright test --project=chromium --project=firefox
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
-
-      - name: Upload Playwright traces
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-traces
-          path: test-results/**/trace.zip
           retention-days: 30

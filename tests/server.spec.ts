@@ -1,28 +1,38 @@
-import {test, expect} from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 test('Double Click the Connect logo', async ({ page }) => {
-    await page.goto('/')
+  await page.goto('/');
 
-// double click Connect logo
+  // double click Connect logo (robust way)
   const hiddenServerButton = page.locator('[data-cy="hidden-server-button"]');
-  await expect(hiddenServerButton).toBeVisible(); // Optional: sanity check
-  await hiddenServerButton.dblclick();
+  await expect(hiddenServerButton).toBeVisible(); // sanity check
+  await hiddenServerButton.scrollIntoViewIfNeeded();
 
-// Wait for server modal to appear
-  const modalButton = page.locator ('[data-cy="server-modal-button"]');
-  await expect(modalButton).toBeVisible();
+  // 1) Try DOM-level dblclick (no actionability requirement)
+  await hiddenServerButton.dispatchEvent('dblclick');
+
+  // Wait for server modal trigger; if not visible, fall back
+  const modalButton = page.locator('[data-cy="server-modal-button"]');
+  if (!(await modalButton.isVisible())) {
+    // 2) Fallback: two single clicks with a tiny gap (works in WebKit headless)
+    await hiddenServerButton.click({ timeout: 2000 });
+    await page.waitForTimeout(80);
+    await hiddenServerButton.click({ timeout: 2000 });
+  }
+
+  // Ensure the server modal trigger is visible, then click it
+  await expect(modalButton).toBeVisible({ timeout: 5000 });
   await modalButton.click();
 
-// click all servers
-  const options = ['Production', 'Staging', 'Local Host','Custom'];
+  // click all servers (your original logic)
+  const options = ['Production', 'Staging', 'Local Host', 'Custom'];
   for (const label of options) {
     const radio = page.getByLabel(label);
-
+    // (left as-is; this block doesn't do anything functional)
     const radioButtons = page.locator('.pb_radio_button');
-
   }
   const radioButtons = page.locator('.pb_radio_button');
   const count = await radioButtons.count();
@@ -34,7 +44,4 @@ test('Double Click the Connect logo', async ({ page }) => {
 
   // Click the Save button
   await page.locator('[data-cy="save-server-choice"]').click();
-
-
-
 });

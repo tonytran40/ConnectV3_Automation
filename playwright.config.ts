@@ -1,52 +1,35 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.BASE_URL; 
+
+// Fail early if BASE_URL is missing in CI
+if (process.env.CI && !baseURL) {
+  throw new Error('BASE_URL is required in CI. Set it via GitHub Secrets.');
+}
+
 export default defineConfig({
-  // Global test timeout (60s instead of 30s default)
-  timeout: 60_000,
-
-  // Directory where your tests live
   testDir: './tests',
-
+  timeout: 30_000, // global test timeout
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
 
-  // Reporters: list in terminal + html output
   reporter: [['list'], ['html']],
 
   use: {
-    // ✅ Run headed locally, headless on CI
-    headless: !!process.env.CI,
-
-    // Longer timeouts per action/navigation to handle CI slowness
+    baseURL,                           // enables page.goto('/')
+    headless: !!process.env.CI,        // run headless in CI, headed locally
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
-
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    trace: 'on-first-retry',
   },
 
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
   ],
-
-  // Optional: start a dev server before tests
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });
