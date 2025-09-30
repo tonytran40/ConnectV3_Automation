@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 test('Double Click the Connect logo', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(`${process.env.BASE_URL}/`, { waitUntil: 'domcontentloaded' });
 
   // double click Connect logo (robust way)
   const hiddenServerButton = page.locator('[data-cy="hidden-server-button"]');

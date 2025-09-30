@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 test('Log in through Nitro login screen', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto(`${process.env.BASE_URL}/`, { waitUntil: 'domcontentloaded' });
 
   // Open server picker
   await page.locator('[data-cy="hidden-server-button"]').dblclick();
