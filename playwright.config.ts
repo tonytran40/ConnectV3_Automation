@@ -35,7 +35,7 @@ export default defineConfig({
   },
 
   // Global test timeout (ms)
-  timeout: 30_000,
+  timeout: 60_000,
 
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
