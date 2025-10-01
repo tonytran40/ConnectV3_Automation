@@ -20,16 +20,17 @@ jobs:
         run: npx playwright install --with-deps
 
       # ✅ Preflight check before running tests
-      - name: Preflight: check BASE_URL reachability
-        env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-        run: |
-          if [ -z "$BASE_URL" ]; then 
-            echo "BASE_URL empty"; 
-            exit 1; 
-          fi
-          echo "Checking $BASE_URL ..."
-          curl -kL --max-time 10 -I "$BASE_URL" || (echo "❌ Unreachable from runner"; exit 1)
+      - name: "Preflight: check BASE_URL reachability"
+  env:
+    BASE_URL: ${{ secrets.BASE_URL }}
+  run: |
+    if [ -z "$BASE_URL" ]; then 
+      echo "❌ BASE_URL empty"; 
+      exit 1; 
+    fi
+    echo "Checking $BASE_URL ..."
+    curl -kL --max-time 10 -I "$BASE_URL" || (echo "❌ Unreachable from runner"; exit 1)
+
 
       - name: Run Playwright tests
         env:
