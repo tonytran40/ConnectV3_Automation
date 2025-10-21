@@ -1,0 +1,42 @@
+# docker-compose.yml
+version: "3.9"
+
+services:
+  # --- Your app under test ---
+  web:
+    # If you build the web app inside the repo:
+    # build: .
+    # Or if you publish an image:
+    image: your-org/connect-web:latest
+    # Ensure the app listens on 0.0.0.0:3001 inside the container
+    ports:
+      - "3001:3001"         # published for local debugging; tests will use service DNS
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+
+  # --- Playwright tests ---
+  tests:
+    image: mcr.microsoft.com/playwright:v1.47.2-jammy
+    working_dir: /work
+    volumes:
+      - .:/work
+    environment:
+      # IMPORTANT: default to the service DNS 'web', override with BASE_URL in CI if needed
+      BASE_URL: ${BASE_URL:-http://web:3001}
+      USER_EMAIL: ${USER_EMAIL}
+      USER_PASSWORD: ${USER_PASSWORD}
+      PLAYWRIGHT_HTML_REPORT: /work/playwright-report
+      PWTRACE: retain-on-failure
+      CI: "true"
+    depends_on:
+      web:
+        condition: service_healthy
+    command: >
+      bash -lc "
+        npm ci &&
+        npx playwright install --with-deps &&
+        npx playwright test --reporter=html
+      "
