@@ -6,12 +6,10 @@ dotenv.config();
 test('Double Click the Connect logo', async ({ page }) => {
   await page.goto(`${process.env.BASE_URL}/`, { waitUntil: 'domcontentloaded' });
 
-  // double click Connect logo (robust way)
   const hiddenServerButton = page.locator('[data-cy="hidden-server-button"]');
   await expect(hiddenServerButton).toBeVisible(); // sanity check
   await hiddenServerButton.scrollIntoViewIfNeeded();
 
-  // 1) Try DOM-level dblclick (no actionability requirement)
   await hiddenServerButton.dispatchEvent('dblclick');
 
   // Wait for server modal trigger; if not visible, fall back
