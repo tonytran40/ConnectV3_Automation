@@ -8,19 +8,19 @@ test('open user menu and create a room', async ({ page }) => {
     await expect(plusButton).toBeVisible();
     await plusButton.click();
     await page.waitForTimeout(3000);
+    // Click new room
     await page.locator('[data-cy="rooms-popup"]').click();
     await page.waitForTimeout(3000);
-    await page.getByPlaceholder('Enter Room Name').fill('QA Automation Test Room');
+    // Enter room name
+    await page.getByPlaceholder('Enter Room Name').fill('QA Automation Test Room 3 ');
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: /^Create$/ }).click();
-
     await page.waitForTimeout(3000);
-    
 
-
-    
-
-
-
+  const messageInput = page.locator('p.is-editor-empty');
+    await messageInput.click();
+    await messageInput.fill('Test from tony');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(2000);
 
 });
