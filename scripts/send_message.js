@@ -56,10 +56,12 @@ async function sendMessage(bodyText) {
   const payload = {
     msgtype: "m.text",
     body: bodyText,
-    connect_msg: {
-      type: "text",
-      version: 1
-    }
+    format: "com.powerhrg.custom.markdown",
+    formatted_body: bodyText,
+    "m.mentions": {
+      room: false,
+      user_ids: [],
+    },
   };
 
   const res = await fetch(url, {
