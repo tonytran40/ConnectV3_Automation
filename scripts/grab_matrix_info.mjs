@@ -7,55 +7,73 @@ dotenv.config();
 (async () => {
   const BASE_URL = process.env.BASE_URL_CONNECT;
   if (!BASE_URL) {
-    console.error("❌ BASE_URL missing in .env");
+    console.error("❌ BASE_URL_CONNECT missing in .env");
     process.exit(1);
   }
 
-  console.log("🌐 Opening:", BASE_URL);
+  const hasAuth = fs.existsSync("auth.json");
 
-  // ❗ ALWAYS start with a CLEAN context
-  // (prevents localhost session restoring)
   const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext(); 
+  const context = hasAuth
+    ? await browser.newContext({ storageState: "auth.json" })
+    : await browser.newContext();
+
   const page = await context.newPage();
 
+  console.log("🌐 Opening Connect...");
   await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
 
-  // ---------- login flow ----------
-  console.log("⚠️ Please log in manually...");
-  await page.waitForTimeout(60000);
+  if (!hasAuth) {
+    console.log("⚠️ No saved login found. Please log in manually...");
+    await page.waitForTimeout(60000); // user logs in manually
+    console.log("💾 Saving your login session to auth.json...");
+    await context.storageState({ path: "auth.json" });
+  }
 
-  // ---------- grab tokens ----------
+  // Wait a bit for Connect to finish loading
+  await page.waitForTimeout(3000);
+
+  // Extract access token
   const matrixAccessToken = await page.evaluate(() =>
     localStorage.getItem("access_token")
   );
 
+  // Try to get room id (only if user is inside a room UI)
   const roomId =
     (await page.evaluate(() => localStorage.getItem("active_room_id"))) ||
     (await page.evaluate(() => localStorage.getItem("room_id")));
 
   if (!matrixAccessToken) {
-    console.log("❌ No access token found. Log in fully, then rerun.");
+    console.log("❌ Still no token. Make sure you are fully logged in.");
     await browser.close();
     process.exit(1);
   }
 
-  console.log("✅ matrix_access_token:", matrixAccessToken.slice(0, 20) + "...");
-  console.log("✅ roomId:", roomId || "(none)");
+  console.log("✅ Found matrix_access_token:", matrixAccessToken.slice(0, 20) + "...");
+  console.log("✅ Found roomId:", roomId || "(none)");
 
-  // ---------- update .env ----------
+  // Update .env file
   const envPath = ".env";
-  let env = fs.readFileSync(envPath, "utf8");
+  let envContent = fs.readFileSync(envPath, "utf8");
 
-  env = env.replace(/MATRIX_ACCESS_TOKEN=.*/g, "");
-  env += `\nMATRIX_ACCESS_TOKEN=${matrixAccessToken}`;
-
-  if (roomId) {
-    env = env.replace(/ROOM_ID=.*/g, "");
-    env += `\nROOM_ID=${roomId}`;
+  // Write/replace TOKEN
+  if (envContent.includes("MATRIX_ACCESS_TOKEN=")) {
+    envContent = envContent.replace(
+      /MATRIX_ACCESS_TOKEN=.*/g,
+      `MATRIX_ACCESS_TOKEN=${matrixAccessToken}`
+    );
+  } else {
+    envContent += `\nMATRIX_ACCESS_TOKEN=${matrixAccessToken}`;
   }
 
-  fs.writeFileSync(envPath, env, "utf8");
+  // Write/replace ROOM_ID
+  if (envContent.includes("ROOM_ID=")) {
+    envContent = envContent.replace(/ROOM_ID=.*/g, `ROOM_ID=${roomId || ""}`);
+  } else {
+    envContent += `\nROOM_ID=${roomId || ""}`;
+  }
+
+  fs.writeFileSync(envPath, envContent, "utf8");
 
   console.log("💾 .env updated successfully.");
   await browser.close();
